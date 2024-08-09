@@ -1,0 +1,6 @@
+A simple web server that can be used to automaticly aggregate user data and store it in collections for later use.
+
+
+Goals:
+
+-

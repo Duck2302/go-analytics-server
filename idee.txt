@@ -1,0 +1,53 @@
+Analytics server
+
+-Authentication to distinguish between the services
+-Simple data analysis (how many messages, averages etc.)
+-Search functions by keywords or date/time
+-Data visualization (json for easy analysis, then optimized for python or something (or csv lol))
+-User roles and access control (log in and sign up page with node server or so(or import html) (auth server-directory))
+-sort Data,Logs andd warmings into different tables ect. have other logic for it
+
+to test: Python script which simulates users (per second)
+
+with docker as container(also for testing)
+
+Goals:
+-Use Env correctly and securely
+-authentication with headers etc
+-Make everything relatively secure
+-Some front-end (dashboard)
+-maybe https if you can do it locally
+-kind of a client to use in custom applications to interface with the service/to authenticate services(for example rotating codes to sign up new services and so on)
+
+
+
+
+LLM ideas:
+
+1. Automated Testing Suite
+Implement automated tests for your application to ensure reliability and catch bugs early. This could include unit tests, integration tests, and end-to-end tests.
+
+# Example command to run tests in Go
+go test ./... -v
+
+
+3. Documentation Generation
+Generate API documentation automatically using tools like Swagger or GoDoc. This ensures that your application is understandable and usable by others.
+
+# Example command to generate GoDoc documentation
+godoc -http=:6060
+
+-Alerts
+-OAuth
+-Ensure data encryption at rest and in transit using TLS/SSL.
+-Use tools like Apache JMeter or Locust for load testing.
+
+
+
+Naming ideas:
+
+WaddleMetrics
+PondInsights
+PondWatch
+PondGuardian
+PondPatrol

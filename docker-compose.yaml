@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  app:
+    image: go-analytics
+    ports:
+      - 5000:5000
+    container_name: go-analytics
+    volumes:
+      - data:/app/data
+    environment:
+      - admin_username=test123
+      - admin_password=password123
+
+
+volumes:
+  data:
