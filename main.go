@@ -23,6 +23,12 @@ type Data struct {
 	Timestamp  string `json:"timestamp"`
 }
 
+type User struct {
+	Id       int    `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func main() {
 	admin_username := os.Getenv("admin_username")
 	admin_password := os.Getenv("admin_password")
@@ -32,6 +38,7 @@ func main() {
 	router.HandleFunc("/v1/analytics", analyticsEndpoint).Methods("POST")
 	router.HandleFunc("/v1/analytics/{collection}", analyticsEndpoint).Methods("GET")
 	router.HandleFunc("/v1/api-key", generateApiKey).Methods("POST")
+	router.HandleFunc("/v1/users/create", createUser).Methods("POST")
 
 	log.Printf("Starting server on Port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
@@ -45,10 +52,18 @@ func createDatabaseTables(admin_password string, admin_username string) {
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		username TEXT NOT NULL,
-		password TEXT NOT NULL,
-		collections BLOB,
-		api_key TEXT 
+		username TEXT NOT NULL UNIQUE,
+		password TEXT NOT NULL
+	)`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS apikeys (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		api_key TEXT NOT NULL,
+		user_id INTEGER,
+		FOREIGN KEY(user_id) REFERENCES users(id)
 	)`)
 	if err != nil {
 		log.Fatal(err)
@@ -162,7 +177,6 @@ func validateUser(r *http.Request) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	var userID int
 	err = db.QueryRow("SELECT id FROM users WHERE username = ? AND password = ?", username, password).Scan(&userID)
@@ -173,6 +187,7 @@ func validateUser(r *http.Request) bool {
 			log.Fatal(err)
 		}
 	}
+	defer db.Close()
 
 	return true
 }
@@ -182,22 +197,31 @@ func generateApiKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	auth := r.Header.Get("Authorization")
-	credentials := strings.Split(auth, " ")
-	username := credentials[0]
-
-	apiKey := uuid.New().String()
-
 	db, err := sql.Open("sqlite3", "./data/test-database.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Update the user's record with the new API key
-	_, err = db.Exec("UPDATE users SET api_key = ? WHERE username = ?", apiKey, username)
+	auth := r.Header.Get("Authorization")
+	credentials := strings.Split(auth, " ")
+	username := credentials[0]
+
+	// Retrieve the user ID for the given username
+	var userId int
+	row := db.QueryRow("SELECT id FROM users WHERE username = ?", username)
+	row_err := row.Scan(&userId)
+	if row_err != nil {
+		log.Fatal(err)
+	}
+
+	apiKey := uuid.New().String()
+
+	// Insert the new API key with the user_id
+	_, err = db.Exec("INSERT INTO apikeys (api_key, user_id) VALUES (?, ?)", apiKey, userId)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer db.Close()
 
 	w.WriteHeader(http.StatusCreated)
@@ -216,7 +240,7 @@ func validateApiKey(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	var userID int
-	err = db.QueryRow("SELECT id FROM users WHERE api_key = ?", apiKey).Scan(&userID)
+	err = db.QueryRow("SELECT user_id FROM apikeys WHERE api_key = ?", apiKey).Scan(&userID)
 	if err != nil {
 		if err == sql.ErrNoRows { // No rows were returned
 			return false
@@ -227,4 +251,35 @@ func validateApiKey(w http.ResponseWriter, r *http.Request) bool {
 	defer db.Close()
 
 	return true
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	if !validateApiKey(w, r) {
+		return
+	}
+	var user User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(user.Username) == 0 || len(user.Password) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Insert data into the SQLite table
+	_, err = db.Exec("INSERT INTO users (username,password) VALUES (?, ?)", user.Username, user.Password)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	w.WriteHeader(http.StatusCreated)
+
 }

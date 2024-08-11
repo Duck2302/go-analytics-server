@@ -2,6 +2,7 @@ Available endpoints:
 "/v1/analytics", Methods="POST"
 "/v1/analytics/{collection}", Methods="GET"
 "/v1/api-key",Methods="POST"
+"/v1/users/create",Methods="POST"
 
 
 "/v1/api-key" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
@@ -11,3 +12,5 @@ All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 "/v1/analytics/{collection}" currently works by id
 
 "/v1/analytics" needs following information in the request body: "type":"test","collection":"test-collection","data":"test_data","source":"test-source"
+
+"/v1/users/create" needs following information in the request body: "username":"TestUsername","password":"password1234"
