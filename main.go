@@ -37,7 +37,8 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/analytics", analyticsEndpoint).Methods("POST")
 	router.HandleFunc("/v1/analytics/{collection}", analyticsEndpoint).Methods("GET")
-	router.HandleFunc("/v1/api-key", generateApiKey).Methods("POST")
+	router.HandleFunc("/v1/api-key/generate", generateApiKey).Methods("POST")
+	router.HandleFunc("/v1/api-key/delete/{id}", deleteApiKey).Methods("DELETE")
 	router.HandleFunc("/v1/users/create", createUser).Methods("POST")
 
 	log.Printf("Starting server on Port 5000")
@@ -228,6 +229,27 @@ func generateApiKey(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"api_key": apiKey})
 }
 
+func deleteApiKey(w http.ResponseWriter, r *http.Request) {
+	if !validateUser(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec("DELETE FROM apikeys WHERE id = ?", id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	w.WriteHeader(http.StatusOK)
+}
 func validateApiKey(w http.ResponseWriter, r *http.Request) bool {
 	apiKey := r.Header.Get("API-Key")
 	if apiKey == "" {
@@ -243,6 +265,7 @@ func validateApiKey(w http.ResponseWriter, r *http.Request) bool {
 	err = db.QueryRow("SELECT user_id FROM apikeys WHERE api_key = ?", apiKey).Scan(&userID)
 	if err != nil {
 		if err == sql.ErrNoRows { // No rows were returned
+			http.Error(w, "API key is invalid", http.StatusUnauthorized)
 			return false
 		} else {
 			log.Fatal(err)

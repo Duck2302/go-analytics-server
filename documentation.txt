@@ -1,11 +1,13 @@
 Available endpoints:
 "/v1/analytics", Methods="POST"
 "/v1/analytics/{collection}", Methods="GET"
-"/v1/api-key",Methods="POST"
+"/v1/api-key/generate",Methods="POST"
+"/v1/api-key/delete/{id}",Methods="DELETE"
 "/v1/users/create",Methods="POST"
 
 
-"/v1/api-key" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
+"/v1/api-key/generate" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
+"/v1/api-key/delete/{id}" requires a body containing: "Authorization" = "Username Password" ;and deletes an API key
 
 All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 
