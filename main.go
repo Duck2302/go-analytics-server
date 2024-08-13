@@ -72,10 +72,17 @@ func createDatabaseTables(admin_password string, admin_username string) {
 		log.Fatal(err)
 	}
 
-	// Insert data into the SQLite table
-	_, err = db.Exec("INSERT INTO users (username,password) VALUES (?, ?)", admin_username, admin_password)
+	var userID int
+	err = db.QueryRow("SELECT id FROM users WHERE username = ? AND password = ?", admin_username, admin_password).Scan(&userID)
 	if err != nil {
-		log.Fatal(err)
+		if err == sql.ErrNoRows { // No rows were returned
+			_, err = db.Exec("INSERT INTO users (username,password) VALUES (?, ?)", admin_username, admin_password)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal(err)
+		}
 	}
 
 	// Create table for analytics
