@@ -5,6 +5,7 @@ Available endpoints:
 "/v1/api-key/delete/{id}",Methods="DELETE"
 "/v1/api-key/regenerate/{id}", Methods="PUT"
 "/v1/users/create",Methods="POST"
+"/v1/users/delete/{id}",Methods="DELETE"
 
 
 "/v1/api-key/generate" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
@@ -18,3 +19,5 @@ All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 "/v1/analytics" needs following information in the request body: "type":"test","collection":"test-collection","data":"test_data","source":"test-source"
 
 "/v1/users/create" needs following information in the request body: "username":"TestUsername","password":"password1234"
+
+"/v1/users/delete/{id}" needs no information in the request body

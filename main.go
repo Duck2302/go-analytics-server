@@ -41,6 +41,7 @@ func main() {
 	router.HandleFunc("/v1/api-key/delete/{id}", deleteApiKey).Methods("DELETE")
 	router.HandleFunc("/v1/api-key/regenerate/{id}", regenerateApiKey).Methods("PUT")
 	router.HandleFunc("/v1/users/create", createUser).Methods("POST")
+	router.HandleFunc("/v1/users/delete/{id}", deleteUser).Methods("DELETE")
 
 	log.Printf("Starting server on Port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
@@ -334,4 +335,27 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	w.WriteHeader(http.StatusCreated)
 
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	if !validateApiKey(w, r) {
+		return
+	}
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = db.Exec("DELETE FROM users where id=?", id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = db.Exec("DELETE FROM apikeys WHERE user_id = ?", id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	w.WriteHeader(http.StatusOK)
 }
