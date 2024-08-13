@@ -1,17 +1,19 @@
 Available endpoints:
 "/v1/analytics", Methods="POST"
 "/v1/analytics/{collection}", Methods="GET"
-"/v1/api-key/generate",Methods="POST"
+"/v1/api-key/generate",Methods="GET"
 "/v1/api-key/delete/{id}",Methods="DELETE"
+"/v1/api-key/regenerate/{id}", Methods="PUT"
 "/v1/users/create",Methods="POST"
 
 
 "/v1/api-key/generate" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
-"/v1/api-key/delete/{id}" requires a body containing: "Authorization" = "Username Password" ;and deletes an API key
+"/v1/api-key/delete/{id}" requires a body containing: "Authorization" = "Username Password" ;and deletes an API key by id
+"/v1/api-key/regenerate/{id}" requires a body containing: "Authorization" = "Username Password" ;and updates an API key by id
 
 All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 
-"/v1/analytics/{collection}" currently works by id
+"/v1/analytics/{collection}" currently works by collection name
 
 "/v1/analytics" needs following information in the request body: "type":"test","collection":"test-collection","data":"test_data","source":"test-source"
 

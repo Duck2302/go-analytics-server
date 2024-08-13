@@ -37,8 +37,9 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/analytics", analyticsEndpoint).Methods("POST")
 	router.HandleFunc("/v1/analytics/{collection}", analyticsEndpoint).Methods("GET")
-	router.HandleFunc("/v1/api-key/generate", generateApiKey).Methods("POST")
+	router.HandleFunc("/v1/api-key/generate", generateApiKey).Methods("GET")
 	router.HandleFunc("/v1/api-key/delete/{id}", deleteApiKey).Methods("DELETE")
+	router.HandleFunc("/v1/api-key/regenerate/{id}", regenerateApiKey).Methods("PUT")
 	router.HandleFunc("/v1/users/create", createUser).Methods("POST")
 
 	log.Printf("Starting server on Port 5000")
@@ -249,6 +250,34 @@ func deleteApiKey(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 	w.WriteHeader(http.StatusOK)
+}
+
+func regenerateApiKey(w http.ResponseWriter, r *http.Request) {
+	if !validateUser(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// Generate a new API key
+	newApiKey := uuid.New().String()
+
+	// Update the existing API key with the new one for the given id
+	_, err = db.Exec("UPDATE apikeys SET api_key = ? WHERE id = ?", newApiKey, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"api_key": newApiKey})
 }
 func validateApiKey(w http.ResponseWriter, r *http.Request) bool {
 	apiKey := r.Header.Get("API-Key")
