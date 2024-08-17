@@ -15,12 +15,12 @@ import (
 
 // Structure for data dealt with in the analytics endpoints
 type Data struct {
-	Id         int    `json:"id"`
-	Type       string `json:"type"`
-	Source     string `json:"source"`
-	Collection string `json:"collection"`
-	Data       string `json:"data"`
-	Timestamp  string `json:"timestamp"`
+	Id             int    `json:"id"`
+	Type           string `json:"type"`
+	Source         string `json:"source"`
+	CollectionName string `json:"collection_name"`
+	Data           string `json:"data"`
+	Timestamp      string `json:"timestamp"`
 }
 
 type User struct {
@@ -104,7 +104,7 @@ func createDatabaseTables(admin_password string, admin_username string) {
 						id INTEGER PRIMARY KEY AUTOINCREMENT,
 						type TEXT NOT NULL,
 						source TEXT,
-						collection TEXT,
+						collection_name TEXT,
 						data TEXT,
 						timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 					)`)
@@ -145,7 +145,7 @@ func createData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(data.Type) == 0 || len(data.Source) == 0 || len(data.Collection) == 0 || len(data.Data) == 0 {
+	if len(data.Type) == 0 || len(data.Source) == 0 || len(data.CollectionName) == 0 || len(data.Data) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -160,7 +160,7 @@ func createData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert data into the SQLite table
-	_, err = db.Exec("INSERT INTO analytics (type,source, collection, data) VALUES (?, ?, ?,?)", data.Type, data.Source, data.Collection, data.Data)
+	_, err = db.Exec("INSERT INTO analytics (type,source, collection_name, data) VALUES (?, ?, ?,?)", data.Type, data.Source, data.CollectionName, data.Data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func checkValidCollection(data Data) bool {
 	}
 
 	var Id int
-	err = db.QueryRow("SELECT id FROM collections WHERE collection_name = ?", data.Collection).Scan(&Id)
+	err = db.QueryRow("SELECT id FROM collections WHERE collection_name = ?", data.CollectionName).Scan(&Id)
 	if err != nil {
 		if err == sql.ErrNoRows { // No rows were returned
 			return false
@@ -200,7 +200,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rows, err := db.Query("SELECT * FROM analytics WHERE collection = ?", collection)
+	rows, err := db.Query("SELECT * FROM analytics WHERE collection_name = ?", collection)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -209,7 +209,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	var results []Data
 	for rows.Next() {
 		var d Data
-		err := rows.Scan(&d.Id, &d.Type, &d.Collection, &d.Data, &d.Timestamp)
+		err := rows.Scan(&d.Id, &d.Type, &d.CollectionName, &d.Data, &d.Timestamp)
 		if err != nil {
 			log.Fatal(err)
 		}
