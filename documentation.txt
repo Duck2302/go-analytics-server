@@ -6,9 +6,11 @@ Available endpoints:
 "/v1/api-key/regenerate/{id}", Methods="PUT"
 "/v1/users/create",Methods="POST"
 "/v1/users/delete/{id}",Methods="DELETE"
+"/v1/collections",Methods="GET"
+"/v1/collections/create",Methods="POST"
+"/v1/collections/delete/{id}",Methods="DELETE"
 
-
-"/v1/api-key/generate" requires a body containing: "Authorization" = "Username Password" ;and returns an API key
+"/v1/api-key/generate" requires a Header containing: "Authorization" = "Username Password" ;and returns an API key
 "/v1/api-key/delete/{id}" requires a body containing: "Authorization" = "Username Password" ;and deletes an API key by id
 "/v1/api-key/regenerate/{id}" requires a body containing: "Authorization" = "Username Password" ;and updates an API key by id
 
@@ -21,3 +23,5 @@ All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 "/v1/users/create" needs following information in the request body: "username":"TestUsername","password":"password1234"
 
 "/v1/users/delete/{id}" needs no information in the request body
+
+"/v1/collections/create" needs the following information in the request body: "collection_name":"my-collection"

@@ -29,6 +29,17 @@ type User struct {
 	Password string `json:"password"`
 }
 
+type APIKey struct {
+	Id     int    `json:"id"`
+	ApiKey string `json:"api_key"`
+	UserId int    `json:"user_id"`
+}
+
+type Collection struct {
+	Id   int    `json:"id"`
+	Name string `json:"collection_name"`
+}
+
 func main() {
 	admin_username := os.Getenv("admin_username")
 	admin_password := os.Getenv("admin_password")
@@ -42,6 +53,9 @@ func main() {
 	router.HandleFunc("/v1/api-key/regenerate/{id}", regenerateApiKey).Methods("PUT")
 	router.HandleFunc("/v1/users/create", createUser).Methods("POST")
 	router.HandleFunc("/v1/users/delete/{id}", deleteUser).Methods("DELETE")
+	router.HandleFunc("/v1/collections", displayCollections).Methods("GET")
+	router.HandleFunc("/v1/collections/create", createCollection).Methods("POST")
+	router.HandleFunc("/v1/collections/delete/{id}", deleteCollection).Methods("DELETE")
 
 	log.Printf("Starting server on Port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
@@ -94,6 +108,14 @@ func createDatabaseTables(admin_password string, admin_username string) {
 						data TEXT,
 						timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 					)`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS collections (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		collection_name TEXT NOT NULL UNIQUE
+	)`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -365,4 +387,88 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 	w.WriteHeader(http.StatusOK)
+}
+
+func createCollection(w http.ResponseWriter, r *http.Request) {
+	if !validateApiKey(w, r) {
+		return
+	}
+	var collection Collection
+	err := json.NewDecoder(r.Body).Decode(&collection)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Insert data into the SQLite table
+	_, err = db.Exec("INSERT INTO collections (collection_name) VALUES (?)", collection.Name)
+	if err != nil {
+		//TO-DO: find out a way to single out the exact error
+		http.Error(w, "Collection name already taken", http.StatusConflict)
+		return
+	}
+	defer db.Close()
+	w.WriteHeader(http.StatusCreated)
+
+}
+
+func displayCollections(w http.ResponseWriter, r *http.Request) {
+	if !validateApiKey(w, r) {
+		return
+	}
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query("SELECT id, collection_name FROM collections")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	var collections []Collection
+	for rows.Next() {
+		var collection Collection
+		err := rows.Scan(&collection.Id, &collection.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		collections = append(collections, collection)
+	}
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(collections)
+}
+
+func deleteCollection(w http.ResponseWriter, r *http.Request) {
+	if !validateApiKey(w, r) {
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = db.Exec("DELETE FROM collections where id=?", id)
+	if err != nil {
+		http.Error(w, "ID does not exist", http.StatusNotFound)
+		log.Fatal(err)
+		return
+	}
+	defer db.Close()
+	w.WriteHeader(http.StatusOK)
+
 }
