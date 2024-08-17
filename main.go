@@ -149,6 +149,10 @@ func createData(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if !checkValidCollection(data) {
+		http.Error(w, "The specified collection does not exist.", http.StatusNotFound)
+		return
+	}
 
 	db, err := sql.Open("sqlite3", "./data/test-database.db")
 	if err != nil {
@@ -162,6 +166,25 @@ func createData(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 	w.WriteHeader(http.StatusCreated)
+}
+
+func checkValidCollection(data Data) bool {
+	db, err := sql.Open("sqlite3", "./data/test-database.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var Id int
+	err = db.QueryRow("SELECT id FROM collections WHERE collection_name = ?", data.Collection).Scan(&Id)
+	if err != nil {
+		if err == sql.ErrNoRows { // No rows were returned
+			return false
+		} else {
+			log.Fatal(err)
+		}
+	}
+
+	return true
 }
 
 // function to get data as a list by collection name
