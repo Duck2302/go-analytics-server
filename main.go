@@ -485,11 +485,22 @@ func deleteCollection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var collection_name string
+	row := db.QueryRow("SELECT collection_name FROM collections WHERE id = ?", id)
+	row_err := row.Scan(&collection_name)
+	if row_err != nil {
+		http.Error(w, "ID does not exist", http.StatusNotFound)
+	}
+
+	_, err = db.Exec("DELETE FROM analytics where collection_name=?", collection_name)
+	if err != nil {
+		http.Error(w, "ID does not exist", http.StatusNotFound)
+	}
+
 	_, err = db.Exec("DELETE FROM collections where id=?", id)
 	if err != nil {
 		http.Error(w, "ID does not exist", http.StatusNotFound)
-		log.Fatal(err)
-		return
 	}
 	defer db.Close()
 	w.WriteHeader(http.StatusOK)
