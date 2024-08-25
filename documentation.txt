@@ -18,10 +18,20 @@ All other endpoints require a body containing: "API-Key" = "Your-API-Key"
 
 "/v1/analytics/{collection}" currently works by collection name
 
-"/v1/analytics" needs following information in the request body: "type":"test","collection":"test-collection","data":"test_data","source":"test-source"
+"/v1/analytics" needs following information in the request body: "type":"test","collection_name":"test-collection","data":"test_data","source":"test-source"
 
 "/v1/users/create" needs following information in the request body: "username":"TestUsername","password":"password1234"
 
 "/v1/users/delete/{id}" needs no information in the request body
 
 "/v1/collections/create" needs the following information in the request body: "collection_name":"my-collection"
+
+
+Standard requests for testing:
+
+To generate API-Key:
+Invoke-WebRequest -Uri http://localhost:5000/v1/api-key/generate -Method Get -Headers @{"Content-Type" = "application/json";"Authorization"="test123 password123"}
+
+Invoke-WebRequest -Uri http://localhost:5000/v1/collections/create -Method Post -Headers @{"Content-Type" = "application/json";"API-Key"=""} -Body '{"collection_name":"test_collection"}'
+
+Invoke-WebRequest -Uri http://localhost:5000/v1/analytics -Method Post -Headers @{"Content-Type" = "application/json";"API-Key"=""} -Body '{"type":"test","source":"test-source","collection_name":"test_collection","data":"test_data"}'
